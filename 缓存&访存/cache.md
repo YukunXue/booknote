@@ -34,9 +34,57 @@
 **实现Cache一致性协议的关键是追踪每一个共享数据块的状态**
 
 
+## Summary:
+[refer](https://www.gatevidyalay.com/cache-line-cache-line-size-cache-memory/)
+
+Keep the cache size constant
+
+## 1. The larger the block size, better will be the spatial locality
+
+`Effect of Changing Block Size on Spatial Locality`
+
+## 2. In direct mapped cache, block size does not affect the cache tag anyhow.
+
+`Effect of Changing Block Size On Cache Tag in Direct Mapped Cache`
+
+## 3. In fully associative cache, on decreasing block size, cache tag is reduced and vice versa.
+
+`Effect of Changing Block Size On Cache Tag in Fully Associative Cache`
+
+## 4. In set associative cache, block size does not affect cache tag anyhow.
+
+`Effect of Changing Block Size On Cache Tag in Set Associative Cache`
+
+## 5. A smaller cache block incurs a lower cache miss penalty.
+`A smaller cache block incurs a lower cache miss penalty.`
+
+## 6. A smaller cache tag ensures a lower cache hit time.
+`Effect of Cache Tag On Cache Hit Time`
+
+##  Cache Coherence  策略：
+
+* Snoopying-based
+
+    每个cache block 对应着一个共享的状态，系统中所有的cache控制器通过共享总线互联，每个cache控制器都监控着共享总线上的操作，根据共享总线上的命令来更新自己的共享状态
+
+
+* Directory-based
+    
+    在某个单一的位置（directory）对某个cache line的共享状态进行跟踪
 
 
 Notebook:
 
 《量化》：
 存储器： 附录B，第二章，附录D，附录M
+
+Snooping protocol: 【A cache controller initiates a request for a block by broadcasting a request message to all other coherence controllers.】 The coherence controllers 【collectivel “do the right thing】,” e.g., sending data in response to another core’s request if they are the owner. Snooping protocols rely on the interconnection network to deliver the 【broadcast messages in a consistent order to all cores】. Most snooping protocols assume that requests arrive in a total order, e.g., via a shared-wire bus, but more advanced interconnection networks and relaxed orders are possible.
+
+Directory protocol: 【A cache controller initiates a request for a block by unicasting it to the memory controller that is the home for that block.】 The memory controller maintains a directory that holds state about each block in the LLC/memory, such as the identity of the current owner or the identities of current sharers. When a request for a block reaches the home, the memory controller looks up this block’s directory state. For example, if the request is a GetS, the memory controller looks up the directory state to determine the owner. If the LLC/memory is the owner, the memory controller completes the transaction by sending a data response to the requestor. If a cache controller is the owner, the memory controller forwards the request to the owner cache; 【when the owner cache receives the forwarded request, it completes the transaction by sending a data response to the requestor.】
+
+The choice of snooping vs. directory involves making tradeoffs. Snooping protocols are logically simple, but they do not scale to large numbers of cores because broadcasting does not scale. Directory protocols are scalable because they unicast, but many transactions take more time because they require an extra message to be sent when the home is not the owner. In addition, the choice of protocol affects the interconnection network (e.g., classical snooping protocols require a total order for request messages).
+
+## Cache Slice
+
+divide the LLC into slices with the purpose of reducing the bandwidth bottlenecks when more than one core attempts to retrieve data from the LLC at the same time
+

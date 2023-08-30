@@ -247,11 +247,90 @@ write data/amo
 ```
 yanqihu:
 
-1. ldu send miss_req  -> miss_Queue ->
-               |          |
-               |          |
+1. ldu send miss_req  -> missQueue -> mainPipe(update data in DCache) -> WBU
+               |          |                                            (if need replace bank in cache)
+               |          |              
              data  < -- L2 MEM
+
+
+NanHu:
+
+2. ldu send miss_req -> missQueue -> mainPipe(or update data in DCache) -> WBU
+               |          |                       |                    (if need replace bank in cache)
+               |          |                       |(arb sel)
+                        refill_pipe --> update DCache
+               |          |
+               |          |
+               data  <--  L2 MEM
+```
+
+## Store Miss Operation
+```
+yanqihu:
+
+1. storeBuffer -> mainPipe(update DCache) -> WBU
+                    |         (if need replace)
+                    | (if store miss(MissQueueArbReq)) S3 stage
+                  MissQueue (update MSHR)
+
+Nanhu
+
+1. storeBuffer -> mainPipe(updtae DCache) -> WBU
+                    |
+                    |(S2 stage)
+                  MissQueue (update MSHR)
+                    |
+                    |
+                  RefillPipe --> update DCache
+
+2. signal bypass:
+missQueue.io.refill_pipe_req -> refillPipe.io.req
+
+missQueueEntry.io.refill_pip_req -> missQueue.io.refill_pip_req
+
+missQueueEntry :
+
+req -> refill_pip_req
 
 ```
 
-不需要替换块的步骤：
+
+## difficult signals:
+
+```
+1. data_write_ready_dup
+
+2. refillShouldBeBlocked_dup
+
+```
+
+
+主要修改MissQueue
+
+不需要替换块的情况：
+
+1. 写入无效数据块
+
+2. 缓存未满
+
+3. 缓存策略不触发替换
+
+4. 加载到空缓存
+
+
+## ReCode MissQueue
+
+1. signals divided into 3 parts:
+  
+    <1> without store data
+  
+    <2> store data
+
+    <3> miss req
+
+alloc (data formal) && accept (data formal)
+
+entry.io.primary_valid
+
+yanqihu:
+missQueue -> pipe_req --> replace bank
